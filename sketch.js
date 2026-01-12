@@ -13,10 +13,16 @@ let sliderPitch;
 let resetButton;
 let northViewButton;
 
+// ★ 季節ラベル
+let seasonLabel;
+
+// ★ 凡例ラベル
+let legendLabel;
+
 // カメラ用 yaw
 let cameraYaw = 0;
 
-// 北極点視点フラグ（昼夜反転用にも使う）
+// 北極点視点フラグ
 let invertDayNight = false;
 
 function preload() {
@@ -24,13 +30,32 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(600, 600, WEBGL);
+  createCanvas(800, 600, WEBGL);
+
+  // ===== 季節表示（キャンバス外） =====
+  seasonLabel = createDiv("夏至");
+  seasonLabel.position(50, 10);
+  seasonLabel.style("font-size", "50px");
+  seasonLabel.style("font-weight", "bold");
+  seasonLabel.style("color", "#000");
+
+  // ===== ★ 凡例表示（季節の下） =====
+  legendLabel = createDiv(
+    "<span style='color:blue;'>青：北極点</span><br>" +
+    "<span style='color:red;'>赤：南極点</span><br>" +
+    "<span style='color:orange;'>橙：明石市</span><br>"
++ "<span style='color:orange;'>(北緯34.38度,東経135度)</span><br>" +
+    "明・暗：昼・夜"
+  );
+  legendLabel.position(50, 100);
+  legendLabel.style("font-size", "18px");
+  legendLabel.style("line-height", "1.5");
 
   sliderPitch = createSlider(-90, 90, 0, 1);
   sliderPitch.position(20, 250);
   sliderPitch.style("width", "200px");
   sliderPitch.style("transform", "rotate(-90deg)");
-  sliderPitch.style("display", "none"); // 表示しない
+  sliderPitch.style("display", "none");
 
   resetButton = createButton("最初に戻る");
   resetButton.position(230, 20);
@@ -57,7 +82,6 @@ function draw() {
   // カメラ補正後の太陽方向（昼夜判定用）
   let sunDirView = rotateYVec(sunDirWorld, cameraYaw);
 
-  // 北極点視点のときだけ昼夜反転
   if (invertDayNight) {
     sunDirView = {
       x: sunDirView.x,
@@ -67,8 +91,8 @@ function draw() {
   }
 
   // ===== 地球 =====
-  rotateZ(tilt);        // 地軸 23.4°
-  rotateY(earthAngle); // 自転
+  rotateZ(tilt);
+  rotateY(earthAngle);
 
   earthShader.setUniform("uSunDir", [
     sunDirView.x,
@@ -94,27 +118,19 @@ function resetView() {
   cameraYaw = 0;
   earthAngle = 0;
   invertDayNight = false;
+  seasonLabel.html("夏至");
 }
 
 function viewFromNorthPole() {
   sliderPitch.value(90);
-  cameraYaw = tilt;      // 23.4°
-  invertDayNight = true; // 北極点モード
+  cameraYaw = tilt;
+  invertDayNight = true;
 }
 
-// ---------------- 太陽（見た目のみ調整） ----------------
+// ---------------- 太陽 ----------------
 function drawSunFromDir(dir) {
   push();
-
-  // ★ 北極点視点のときだけ左右反転して「右」に出す
-  const sign = invertDayNight ? 1 : 1;
-
-  translate(
-    sign * dir.x * 300,
-    dir.y * 300,
-    dir.z * 300
-  );
-
+  translate(dir.x * 300, dir.y * 300, dir.z * 300);
   noStroke();
   fill(255, 200, 0);
   sphere(20);
@@ -156,4 +172,3 @@ function drawAkashiMarker(r) {
   line(0,0,0, nx*10, ny*10, nz*10);
   pop();
 }
-
